@@ -1,0 +1,51 @@
+# GSI Builder
+
+A GitHub Actions workflow to customize Android Treble Generic System Images (GSIs) directly in the cloud.
+
+## Features
+
+- Download a GSI from a direct URL
+- Convert EXT4 ↔ EROFS
+- Remove selected VNDK versions
+- Optional debloating
+- Preserve the original ROM filename
+- Generate SHA256 checksum
+- Upload artifacts automatically
+
+## Requirements
+
+- GitHub Actions
+- Direct download link to the GSI
+
+## Usage
+
+1. Open the Actions tab in your repository.
+2. Select "GSI Builder" from the workflow list.
+3. Click "Run workflow".
+4. Enter the GSI download URL and configure the build settings.
+5. Click "Run workflow" to start the build.
+6. Download the generated system image and checksum file from the workflow artifacts.
+
+## Workflow Options
+
+- **GSI URL**: Direct link to the source GSI image or compressed archive.
+- **Output filesystem**: Select either ext4 (read-write) or erofs (read-only) for the output GSI partition.
+- **Remove VNDK versions (v28 to v33)**: Select VNDK versions to remove from the system image to free up space.
+- **Remove wallpapers**: Remove pre-installed wallpapers from the GSI.
+- **Remove sounds**: Delete system alarms, notifications, ringtones, and user interface sounds.
+- **Remove fonts**: Remove non-essential Noto fonts while keeping standard system fonts.
+- **Remove live wallpapers**: Strip live wallpapers packages and pickers.
+- **Remove pixel themes**: Remove Pixel-specific theme overlays.
+- **Compress output**: Select compression format (none, xz, or 7z) for the generated GSI artifact.
+
+## Output
+
+Example output files:
+
+Axion-2.7_GSI_treble_arm64-ab-GAPPS-EROFS-20260711.img.xz
+
+Axion-2.7_GSI_treble_arm64-ab-GAPPS-EROFS-20260711.img.xz.sha256
+
+## License
+
+This project is licensed under the MIT License.

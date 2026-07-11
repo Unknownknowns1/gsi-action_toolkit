@@ -1,0 +1,170 @@
+name: GSI Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      gsi_url:
+        description: 'Direct GSI download URL (supports .img, .img.xz, .xz, .7z, .zip, .tar.gz)'
+        required: true
+        type: string
+      output_fs:
+        description: 'Output filesystem format'
+        required: true
+        type: choice
+        options:
+          - ext4
+          - erofs
+        default: ext4
+      remove_vndk_v28:
+        description: 'Remove VNDK v28 (Android 9)'
+        required: false
+        type: boolean
+        default: false
+      remove_vndk_v29:
+        description: 'Remove VNDK v29 (Android 10)'
+        required: false
+        type: boolean
+        default: false
+      remove_vndk_v30:
+        description: 'Remove VNDK v30 (Android 11)'
+        required: false
+        type: boolean
+        default: false
+      remove_vndk_v31:
+        description: 'Remove VNDK v31 (Android 12)'
+        required: false
+        type: boolean
+        default: false
+      remove_vndk_v32:
+        description: 'Remove VNDK v32 (Android 12L)'
+        required: false
+        type: boolean
+        default: false
+      remove_vndk_v33:
+        description: 'Remove VNDK v33 (Android 13)'
+        required: false
+        type: boolean
+        default: false
+      remove_wallpapers:
+        description: 'Remove pre-installed static wallpapers (except essential)'
+        required: false
+        type: boolean
+        default: false
+      remove_sounds:
+        description: 'Remove system sounds (alarms, ringtones, notifications, UI)'
+        required: false
+        type: boolean
+        default: false
+      remove_fonts:
+        description: 'Remove non-essential NotoSans languages/fonts (saves ~200MB)'
+        required: false
+        type: boolean
+        default: false
+      remove_live_wallpapers:
+        description: 'Remove system live wallpapers picker and packages'
+        required: false
+        type: boolean
+        default: false
+      remove_pixel_themes:
+        description: 'Remove Pixel overlay themes'
+        required: false
+        type: boolean
+        default: false
+      compress_output:
+        description: 'Compression for output GSI artifact'
+        required: true
+        type: choice
+        options:
+          - none
+          - xz
+          - 7z
+        default: none
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: System information
+        run: |
+          echo "=== Host Environment ==="
+          uname -a
+          df -h
+          free -m
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            erofs-utils \
+            android-sdk-libsparse-utils \
+            p7zip-full \
+            xz-utils \
+            axel \
+            rsync \
+            e2fsprogs \
+            file
+
+      - name: Free disk space
+        run: |
+          echo "=== Disk Space Before Cleanup ==="
+          df -h
+          # Remove large unnecessary files/folders to maximize space for image extraction
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          echo "=== Disk Space After Cleanup ==="
+          df -h
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Build GSI
+        env:
+          GSI_URL: ${{ inputs.gsi_url }}
+          OUTPUT_FS: ${{ inputs.output_fs }}
+          REMOVE_VNDK_V28: ${{ inputs.remove_vndk_v28 }}
+          REMOVE_VNDK_V29: ${{ inputs.remove_vndk_v29 }}
+          REMOVE_VNDK_V30: ${{ inputs.remove_vndk_v30 }}
+          REMOVE_VNDK_V31: ${{ inputs.remove_vndk_v31 }}
+          REMOVE_VNDK_V32: ${{ inputs.remove_vndk_v32 }}
+          REMOVE_VNDK_V33: ${{ inputs.remove_vndk_v33 }}
+          REMOVE_WALLPAPERS: ${{ inputs.remove_wallpapers }}
+          REMOVE_SOUNDS: ${{ inputs.remove_sounds }}
+          REMOVE_FONTS: ${{ inputs.remove_fonts }}
+          REMOVE_LIVE_WALLPAPERS: ${{ inputs.remove_live_wallpapers }}
+          REMOVE_PIXEL_THEMES: ${{ inputs.remove_pixel_themes }}
+          COMPRESS_OUTPUT: ${{ inputs.compress_output }}
+        run: |
+          ./scripts/build.sh
+
+      - name: Find artifacts
+        id: artifact_finder
+        run: |
+          # Find GSI image file in the workspace directory (excluding checksums)
+          ARTIFACT_PATH=$(find workspace -maxdepth 1 -type f ! -name "*.sha256" | head -n 1)
+          CHECKSUM_PATH="${ARTIFACT_PATH}.sha256"
+          
+          echo "artifact_path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+          echo "checksum_path=$CHECKSUM_PATH" >> $GITHUB_OUTPUT
+          echo "artifact_name=$(basename "$ARTIFACT_PATH")" >> $GITHUB_OUTPUT
+          echo "checksum_name=$(basename "$CHECKSUM_PATH")" >> $GITHUB_OUTPUT
+
+      - name: Upload GSI image
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact_finder.outputs.artifact_name }}
+          path: ${{ steps.artifact_finder.outputs.artifact_path }}
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Upload checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact_finder.outputs.checksum_name }}
+          path: ${{ steps.artifact_finder.outputs.checksum_path }}
+          compression-level: 0
+          if-no-files-found: error

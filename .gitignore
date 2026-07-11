@@ -1,0 +1,19 @@
+# Workspace directory
+workspace/
+out/
+
+# Android Images and archives
+*.img
+*.xz
+*.7z
+*.zip
+*.tar.gz
+*.sha256
+
+# Temporary mount directories
+mnt*/
+
+# System files
+.DS_Store
+.direnv/
+.env
