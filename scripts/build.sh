@@ -192,15 +192,21 @@ log_step_success "Download complete ($DOWNLOAD_SIZE)"
 log_header "Extract GSI"
 run_cmd bash "$SCRIPT_DIR/extract.sh" "$DOWNLOADED_FILE" "$EXTRACT_DIR" "$INPUT_IMAGE"
 log_step_success "Extraction complete"
-log_header "Checking if GSI image is sparse"
+log_header "Checking if GSI image is compressed or sparse"
+# 1. Handle XZ decompression if nested
+if file "$INPUT_IMAGE" | grep -qi "XZ compressed data"; then
+    echo -e "📦 Nested XZ compression detected! Decompressing..."
+    mv "$INPUT_IMAGE" "${INPUT_IMAGE}.xz"
+    xz -d "${INPUT_IMAGE}.xz"
+fi
 
+# 2. Handle sparse image conversion
 if simg2img "$INPUT_IMAGE" "${INPUT_IMAGE}.raw" 2>/dev/null; then
     echo -e "🔄 Sparse image detected! Converting to standard raw image..."
     mv "${INPUT_IMAGE}.raw" "$INPUT_IMAGE"
 else
-    echo -e "ℹ️ Image is already a raw image, moving forward."
+    echo -e "ℹ️ Image is a standard raw image, moving forward."
     rm -f "${INPUT_IMAGE}.raw"
-    file "workspace/system.img"
 fi
 # Detect Filesystem of original RAW image
 log_header "Detect filesystem type"
