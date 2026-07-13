@@ -200,6 +200,7 @@ if simg2img "$INPUT_IMAGE" "${INPUT_IMAGE}.raw" 2>/dev/null; then
 else
     echo -e "ℹ️ Image is already a raw image, moving forward."
     rm -f "${INPUT_IMAGE}.raw"
+    file "workspace/system.img"
 fi
 # Detect Filesystem of original RAW image
 log_header "Detect filesystem type"
