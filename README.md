@@ -19,12 +19,13 @@ A GitHub Actions workflow to customize Android Treble Generic System Images (GSI
 
 ## Usage
 
-1. Open the Actions tab in your repository.
-2. Select "GSI Builder" from the workflow list.
-3. Click "Run workflow".
-4. Enter the GSI download URL and configure the build settings.
-5. Click "Run workflow" to start the build.
-6. Download the generated system image and checksum file from the workflow artifacts.
+1. Fork this repo
+2. Open the Actions tab in your repository.
+3. Select "GSI Builder" from the workflow list.
+4. Click "Run workflow".
+5. Enter the GSI download URL and configure the build settings.
+6. Click "Run workflow" to start the build.
+7. Download the generated system image and checksum file from the workflow artifacts.
 
 ## Workflow Options
 
